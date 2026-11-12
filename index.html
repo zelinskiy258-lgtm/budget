@@ -178,6 +178,9 @@ button:disabled{cursor:default;opacity:.55}
 .step input{width:64px;height:44px;border:0;background:none;text-align:right;font-family:var(--serif);font-weight:600;font-size:var(--fs-md);font-variant-numeric:tabular-nums;outline:none;padding:0 2px}
 .bud .lock{font-size:var(--fs-xs);color:var(--mute);text-align:right;white-space:nowrap}
 .bud .lock b{display:block;font-family:var(--serif);font-size:var(--fs-md);color:var(--ink)}
+.bud .fx{display:inline-flex;align-items:center;gap:4px;margin-top:4px;min-height:28px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:600;color:var(--mute);box-shadow:inset 0 0 0 1px var(--line)}
+.bud .fx:hover{color:var(--ink)}
+.bud .fx[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);box-shadow:none}
 .bud-tools{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s2)}
 #budgetSheet .note{font-size:var(--fs-xs);color:var(--mute);margin:var(--s2) 0 var(--s3)}
 
@@ -671,7 +674,10 @@ const Demo = (() => {
     setMonthArchive: on => { state.close.archive = !!on; if (on) state.close.auto = true; return snapshot(); },
     setBudgets: changes => {
       let saved = 0;
-      changes.forEach(ch => { const c = CATS.find(x => x.name === ch.name); if (c) { c.plan = Math.round(ch.plan * 100) / 100; saved++; } });
+      changes.forEach(ch => { const c = CATS.find(x => x.name === ch.name); if (!c) return;
+        if (ch.plan != null) c.plan = Math.round(ch.plan * 100) / 100;
+        if (ch.fixed != null) c.fixed = ch.fixed || 0;
+        saved++; });
       return {saved, skipped: [], conflicts: [], data: snapshot()};
     },
     getArchive: () => {
@@ -1718,14 +1724,14 @@ async function removeTx(tx) {
 }
 
 /* ---------- бюджет: редагування з додатка → колонка «План» на дашборді ---------- */
-let BUD = null; // чернетка: {назва: сума в €}
+let BUD = null, BUDF = null; // чернетка: {назва: сума в €}, {назва: фіксована щомісяця}
 const budNum = s => { const n = parseFloat(String(s).replace(/[\s €]/g, '').replace(',', '.')); return isNaN(n) ? NaN : Math.round(n * 100) / 100; };
 const budVal = n => (Math.round(n * 100) / 100).toString().replace('.', ',');
 const prevCats = () => { const m = (D.months || [])[0]; return m && m.cats ? m : null; };
 
 function openBudget() {
   if (!D) return;
-  BUD = {}; D.categories.forEach(c => BUD[c.name] = c.plan);
+  BUD = {}; BUDF = {}; D.categories.forEach(c => { BUD[c.name] = c.plan; BUDF[c.name] = c.fixed > 0; });
   const pm = prevCats(), editable = D.categories.filter(c => !c.locked).length;
   $('#budBody').innerHTML = `
     <div class="note">Зміни записуються в колонку «План» аркуша «Дашборд та Бюджет». Денні ліміти та залишки таблиця перерахує сама.</div>
@@ -1736,7 +1742,8 @@ function openBudget() {
       const pv = pm && pm.cats[c.name] != null ? ` · ${MONTHS_G[+pm.ym.slice(5) - 1].slice(0, 3)}. ${fmt(pm.cats[c.name], 'EUR', true)}` : '';
       return `<div class="bud" data-bud-row="${esc(c.name)}" style="--c:${catColor(c.name)}">
         <span class="ic">${catIcon(c.name)}</span>
-        <span class="nm">${esc(short(c.name))}<small class="num">витрачено ${fmt(c.fact, 'EUR', true)}${pv}</small></span>
+        <span class="nm">${esc(short(c.name))}<small class="num">витрачено ${fmt(c.fact, 'EUR', true)}${pv}</small>
+          <button class="fx" data-bud-fix="${esc(c.name)}" aria-pressed="${c.fixed > 0}" title="Сума рахується з 1-го числа щомісяця, без окремого запису — як оренда чи гуртожиток">${svg('repeat')} щомісяця</button></span>
         ${c.locked ? `<span class="lock"><b class="num">${fmt(c.plan, 'EUR')}</b>формула в таблиці</span>` : `<span class="step">
           <button data-bud-step="-5" aria-label="Менше на 5 €">−</button>
           <label>€<input data-bud="${esc(c.name)}" inputmode="decimal" enterkeyhint="done" value="${budVal(c.plan)}" aria-label="Бюджет: ${esc(short(c.name))}, євро" autocomplete="off"></label>
@@ -1747,8 +1754,16 @@ function openBudget() {
 }
 
 function budChanges() {
-  return D.categories.filter(c => !c.locked && !isNaN(BUD[c.name]) && Math.abs(BUD[c.name] - c.plan) > .005)
-    .map(c => ({name: c.name, plan: BUD[c.name], was: c.plan}));
+  const out = [];
+  D.categories.forEach(c => {
+    const v = c.locked || isNaN(BUD[c.name]) ? c.plan : BUD[c.name];
+    const ch = {name: c.name};
+    if (!c.locked && !isNaN(BUD[c.name]) && Math.abs(BUD[c.name] - c.plan) > .005) { ch.plan = BUD[c.name]; ch.was = c.plan; }
+    const fx = BUDF[c.name] ? v : 0;
+    if (Math.abs(fx - (c.fixed || 0)) > .005) { ch.fixed = fx; ch.fixedWas = c.fixed || 0; }
+    if (ch.plan != null || ch.fixed != null) out.push(ch);
+  });
+  return out;
 }
 
 function budUpdate() {
@@ -1760,7 +1775,8 @@ function budUpdate() {
     (DISP !== 'EUR' ? `≈ ${fmt(total)}` : `≈ ${fmt(total, 'UAH')}`);
   document.querySelectorAll('[data-bud-row]').forEach(r => {
     const c = D.categories.find(x => x.name === r.dataset.budRow), v = BUD[c.name];
-    r.classList.toggle('chg', !c.locked && !isNaN(v) && Math.abs(v - c.plan) > .005);
+    const fxChg = !!BUDF[c.name] !== (c.fixed > 0);
+    r.classList.toggle('chg', fxChg || (!c.locked && !isNaN(v) && Math.abs(v - c.plan) > .005));
     r.classList.toggle('bad', !c.locked && (isNaN(v) || v < 0));
   });
   const n = budChanges().length, b = $('#budSave');
@@ -1778,7 +1794,7 @@ async function saveBudgets(changes, undoable) {
   } else if (undoable) {
     toast(`Бюджет оновлено в таблиці · ${plural(res.saved, 'категорія', 'категорії', 'категорій')}`, 'Повернути', async () => {
       $('#toast').classList.remove('on');
-      try { await saveBudgets(changes.map(c => ({name: c.name, plan: c.was, was: c.plan})), false); toast('Попередній бюджет повернуто'); }
+      try { await saveBudgets(changes.map(c => ({name: c.name, plan: c.plan != null ? c.was : undefined, was: c.plan, fixed: c.fixed != null ? c.fixedWas : undefined})), false); toast('Попередній бюджет повернуто'); }
       catch (err) { toast(friendly(err), '', null, 'error'); }
     });
   }
@@ -1864,6 +1880,9 @@ document.addEventListener('click', async e => {
     closeSheets(); showConnect();
   }
   else if (t.hasAttribute('data-open-budget')) openBudget();
+  else if (ds.budFix) {
+    BUDF[ds.budFix] = !BUDF[ds.budFix]; t.setAttribute('aria-pressed', BUDF[ds.budFix]); budUpdate();
+  }
   else if (ds.budStep) {
     const inp = t.parentElement.querySelector('input'), name = inp.dataset.bud;
     const v = isNaN(BUD[name]) ? 0 : BUD[name], st = +ds.budStep;
