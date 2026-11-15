@@ -1,0 +1,16 @@
+{
+  "name": "Мій бюджет",
+  "short_name": "Бюджет",
+  "lang": "uk",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#141311",
+  "theme_color": "#141311",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Додати витрату", "url": "./#add" }
+  ]
+}
