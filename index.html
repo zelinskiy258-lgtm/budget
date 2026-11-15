@@ -49,7 +49,7 @@ if (window.BUDGET_PWA) (function () {
   /* Заокруглення — лише чотири: sm — дрібні елементи (до 36 px: іконки, малі кнопки), md — кнопки, поля, рядки, внутрішні блоки,
      card — картки й панелі, 999px — «таблетки» (чіпи, бейджі, смужки). Рамка картки одна для всіх — --edge */
   --r-sm:.5rem; --r-md:.75rem; --r-card:1.25rem; --r-inner:var(--r-sm);
-  --edge:inset 0 0 0 1px rgba(255,255,255,.06);
+  --edge:inset 0 0 0 1px rgba(243,237,227,.06);
   --pad-card:1rem; --tap:2.75rem; --side:15.25rem;
   --vh:100vh;
   --fast:150ms; --mid:250ms; --ease:cubic-bezier(.2,.8,.2,1);
@@ -84,7 +84,7 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .seg button{flex:none;min-width:var(--tap);height:2.5rem;padding:0 .85em;border-radius:calc(var(--r-sm) - 3px);font-weight:600;font-size:var(--fs-sm);color:var(--ink2);transition:background var(--fast),color var(--fast)}
 .seg button:hover{color:var(--ink)}
 /* вибраний варіант — світлий, щоб одразу було видно, що вибрано */
-.seg button.on{background:var(--ink);color:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.seg button.on{background:var(--ink);color:var(--paper);box-shadow:0 1px 2px rgba(10,8,6,.35)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.55em;min-height:var(--tap);padding:0 1.7em;border-radius:var(--r-md);font-weight:600;font-size:var(--fs-sm);transition:background var(--fast),transform var(--fast)}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--accent);color:var(--on-accent)}
@@ -383,7 +383,7 @@ body.nosheet #root{display:grid;place-items:center;min-height:calc(var(--vh) - 7
 .hbar.sel{background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line)}
 .vbars{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:var(--s2);align-items:end;height:clamp(8.75rem,20vh,11.25rem)}
 .vb{position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:var(--s1);min-width:0;border-radius:var(--r-sm);cursor:default}
-.vb:hover{background:rgba(255,255,255,.03)}
+.vb:hover{background:rgba(243,237,227,.03)}
 .vb .plot{position:relative;flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
 .vb .plot i{display:block;width:70%;max-width:2.125rem;border-radius:4px 4px 0 0;background:var(--c,var(--ok));min-height:2px}
 .vb .plot i.over{background:var(--bad)}
@@ -418,12 +418,12 @@ body.nosheet #root{display:grid;place-items:center;min-height:calc(var(--vh) - 7
 .sk-card{background:var(--card);border-radius:var(--r-card);padding:var(--pad-card);display:flex;flex-direction:column;gap:var(--s3)}
 
 /* підказка при наведенні */
-#tip{position:fixed;z-index:80;pointer-events:none;background:var(--ink);color:var(--paper);border-radius:var(--r-sm);padding:.4em .7em;font-size:var(--fs-xs);font-weight:500;line-height:1.4;max-width:13.75rem;box-shadow:0 8px 20px -8px rgba(0,0,0,.6);opacity:0;transform:translateY(4px);transition:opacity 120ms,transform 120ms}
+#tip{position:fixed;z-index:80;pointer-events:none;background:var(--ink);color:var(--paper);border-radius:var(--r-sm);padding:.4em .7em;font-size:var(--fs-xs);font-weight:500;line-height:1.4;max-width:13.75rem;box-shadow:0 8px 20px -8px rgba(10,8,6,.6);opacity:0;transform:translateY(4px);transition:opacity 120ms,transform 120ms}
 #tip.on{opacity:1;transform:none}
 #tip b{font-weight:700}
 
 /* нижня панель — низько, біля краю екрана, як у Telegram / Instagram */
-.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:max(var(--s2),calc(env(safe-area-inset-bottom) - var(--s2)));display:flex;align-items:center;gap:2px;width:max-content;max-width:calc(100vw - var(--s4));background:rgba(39,36,31,.92);backdrop-filter:blur(14px);border-radius:999px;padding:.375rem;z-index:20;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 12px 28px -10px rgba(0,0,0,.7)}
+.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:max(var(--s2),calc(env(safe-area-inset-bottom) - var(--s2)));display:flex;align-items:center;gap:2px;width:max-content;max-width:calc(100vw - var(--s4));background:rgba(39,36,31,.92);backdrop-filter:blur(14px);border-radius:999px;padding:.375rem;z-index:20;box-shadow:inset 0 0 0 1px rgba(243,237,227,.06),0 12px 28px -10px rgba(10,8,6,.7)}
 .tabbar .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--mute);height:3.125rem;min-width:3.5rem;padding:0 .55em;border-radius:999px;font-weight:600;font-size:.6875rem;transition:background var(--fast),color var(--fast)}
 .tabbar .tab .i{font-size:1.1875rem}
 .tabbar .tab.on{background:rgba(243,237,227,.1);color:var(--ink)}
@@ -594,7 +594,7 @@ body.t-arch #archive{display:flex}
 }
 .more-hist{width:100%;margin-top:var(--s3)}
 /* сповіщення про нову версію */
-.upd{position:fixed;left:50%;top:.75rem;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:var(--s3);width:min(35rem,calc(100vw - 1.5rem));padding:var(--s3) var(--s3) var(--s3) var(--s4);border-radius:var(--r-md);background:var(--raise);box-shadow:0 8px 24px rgba(0,0,0,.45),inset 0 0 0 1px var(--accent);font-size:var(--fs-xs);color:var(--ink2)}
+.upd{position:fixed;left:50%;top:.75rem;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:var(--s3);width:min(35rem,calc(100vw - 1.5rem));padding:var(--s3) var(--s3) var(--s3) var(--s4);border-radius:var(--r-md);background:var(--raise);box-shadow:0 8px 24px rgba(10,8,6,.45),inset 0 0 0 1px var(--accent);font-size:var(--fs-xs);color:var(--ink2)}
 .upd > .i{color:var(--accent);font-size:1.25rem;flex:none}
 .upd span{flex:1;min-width:0}
 .upd b{display:block;color:var(--ink);font-size:var(--fs-sm)}
@@ -761,11 +761,11 @@ a.btn{text-decoration:none}
 /* панелі */
 .scrim{position:fixed;inset:0;background:rgba(5,4,3,.6);opacity:0;pointer-events:none;transition:opacity var(--mid);z-index:40}
 .scrim.on{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;width:100%;max-width:30rem;margin:0 auto;background:var(--card);border-radius:var(--r-card) var(--r-card) 0 0;padding:var(--s3) var(--s5) calc(env(safe-area-inset-bottom) + var(--s5));z-index:50;transform:translateY(105%);transition:transform var(--mid) var(--ease);max-height:calc(var(--vh) * .92);overflow:auto;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.sheet{position:fixed;left:0;right:0;bottom:0;width:100%;max-width:30rem;margin:0 auto;background:var(--card);border-radius:var(--r-card) var(--r-card) 0 0;padding:var(--s3) var(--s5) calc(env(safe-area-inset-bottom) + var(--s5));z-index:50;transform:translateY(105%);transition:transform var(--mid) var(--ease);max-height:calc(var(--vh) * .92);overflow:auto;box-shadow:inset 0 1px 0 rgba(243,237,227,.06)}
 .sheet.on{transform:none}
 @media(min-width:900px){.sheet{bottom:50%;border-radius:var(--r-card);transform:translateY(55%) scale(.97);opacity:0;pointer-events:none;transition:transform var(--mid) var(--ease),opacity var(--mid)}.sheet.on{transform:translateY(50%);opacity:1;pointer-events:auto}
   /* деталі витрати на ПК — панель справа, список лишається видно */
-  #txSheet{top:0;bottom:0;left:auto;right:0;margin:0;width:26.25rem;max-width:calc(100vw - 3rem);max-height:none;border-radius:var(--r-card) 0 0 var(--r-card);padding:var(--s6) var(--s5);transform:translateX(105%);opacity:1;box-shadow:inset 1px 0 0 var(--line),-24px 0 48px -24px rgba(0,0,0,.7)}
+  #txSheet{top:0;bottom:0;left:auto;right:0;margin:0;width:26.25rem;max-width:calc(100vw - 3rem);max-height:none;border-radius:var(--r-card) 0 0 var(--r-card);padding:var(--s6) var(--s5);transform:translateX(105%);opacity:1;box-shadow:inset 1px 0 0 var(--line),-24px 0 48px -24px rgba(10,8,6,.7)}
   #txSheet.on{transform:none}
   #txSheet .grab{display:none}
   .scrim.light{background:rgba(5,4,3,.25)}
@@ -981,7 +981,7 @@ a.btn{text-decoration:none}
 /* ---------- дані: Apps Script або демо ---------- */
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 // Версія інтерфейсу — має збігатися з BUDGET_APP.BUILD у BudgetApp.gs
-const BUILD = '2026-11-15.17';
+const BUILD = '2026-11-15.18';
 // Встановлювана програма (GitHub Pages): той самий інтерфейс, вхід через Google, дані — через Apps Script API
 const PWA = !IS_GAS && !!window.BUDGET_PWA;
 const CLOUD = window.BUDGET_CLOUD || {};
