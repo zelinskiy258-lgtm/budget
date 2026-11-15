@@ -946,7 +946,7 @@ a.btn{text-decoration:none}
 /* ---------- дані: Apps Script або демо ---------- */
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 // Версія інтерфейсу — має збігатися з BUDGET_APP.BUILD у BudgetApp.gs
-const BUILD = '2026-11-15.12';
+const BUILD = '2026-11-15.13';
 // Встановлювана програма (GitHub Pages): той самий інтерфейс, вхід через Google, дані — через Apps Script API
 const PWA = !IS_GAS && !!window.BUDGET_PWA;
 const CLOUD = window.BUDGET_CLOUD || {};
@@ -973,6 +973,7 @@ const Demo = (() => {
     ['2026-11-03','Харчування та їжа',10.34,'Billa'],
     ['2026-11-02','Харчування та їжа',15.11,'Kaufland'],
     ['2026-11-02',"Зв'язок",16.00,'Kyivstar'],
+    ['2026-11-01','Житло (Гуртожиток)',85.00,'Гуртожиток'],
   ].map((r, i) => ({row: 100 - i, date: r[0], category: r[1], amount: r[2], currency: 'EUR', note: r[3]}));
 
   // Серпень–жовтень — вигадана історія для демо статистики
@@ -982,7 +983,7 @@ const Demo = (() => {
   const hist = [];
   ['2026-08', '2026-09', '2026-10'].forEach((ym, mi) => {
     const [y, m] = ym.split('-').map(Number), dim = new Date(y, m, 0).getDate();
-    hist.push([ym + '-02', "Зв'язок", 16, 'Kyivstar'], [ym + '-05', 'Інше', 3.99, 'Spotify']);
+    hist.push([ym + '-01', 'Житло (Гуртожиток)', 85, 'Гуртожиток', true], [ym + '-02', "Зв'язок", 16, 'Kyivstar'], [ym + '-05', 'Інше', 3.99, 'Spotify', true]);
     if (m === 9) hist.push([ym + '-03', 'Навчання', 24.5, 'Підручники'], [ym + '-15', 'Навчання', 13.5, 'Книгарня']);
     for (let d = 1; d <= dim; d++) {
       const ds = ym + '-' + String(d).padStart(2, '0'), wd = new Date(y, m - 1, d).getDay();
@@ -997,17 +998,21 @@ const Demo = (() => {
 
   const state = {
     today, rates, recent: nov, columns: {currency: 'Валюта'}, demo: true,
-    close: {auto: false, pending: '2026-10', archive: false, email: true},
+    close: {auto: false, pending: '2026-10', email: true},
     incomes: [{row: 2, date: '2026-11-01', amount: 350, currency: 'EUR', note: 'Стипендія'}],
     extras: {mode: 'off', roll: {ym: '2026-10', plan: 300, spent: 276.6, left: 23.4, from: 'calc'}, rollAdd: 0, bonus: 0,
-             piggy: 0, piggyLog: {}, recur: [{id: 'd1', note: 'Spotify', category: 'Інше', amount: 3.99, currency: 'EUR', day: 5, last: '2026-11'}],
+             piggy: 0, piggyLog: {}, recur: [{id: 'd0', note: 'Гуртожиток', category: 'Житло (Гуртожиток)', amount: 85, currency: 'EUR', day: 1, last: '2026-11'},
+               {id: 'd1', note: 'Spotify', category: 'Інше', amount: 3.99, currency: 'EUR', day: 15, last: ''}],
              digest: false, email: 'ви@gmail.com'},
   };
   const all = () => hist.map(r => ({date: r[0], category: r[1], eur: r[2], note: r[3]}))
     .concat(state.recent.map(t => ({date: t.date, category: t.category, eur: toEur(t.amount, t.currency, rates), note: t.note})));
+  // демо: платежі, які цього місяця ще не записані, — зарезервовані в бюджеті (як на сервері)
+  const pendingPay = () => state.extras.recur.reduce((o, r) => { if (r.last !== today.slice(0, 7)) o[r.category] = (o[r.category] || 0) + r.amount; return o; }, {});
+  const payTotal = () => state.extras.recur.reduce((o, r) => (o[r.category] = (o[r.category] || 0) + r.amount, o), {});
   const summarize = ym => {
     const list = all().filter(t => t.date.slice(0, 7) === ym);
-    const cats = {}; CATS.forEach(c => cats[c.name] = c.fixed || 0);
+    const cats = {}; CATS.forEach(c => cats[c.name] = 0);
     list.forEach(t => cats[t.category] = (cats[t.category] || 0) + t.eur);
     const plan = CATS.reduce((s, c) => s + c.plan, 0), spent = Object.values(cats).reduce((a, b) => a + b, 0);
     const big = list.slice().sort((a, b) => b.eur - a.eur)[0];
@@ -1019,8 +1024,8 @@ const Demo = (() => {
 
   const snapshot = () => {
     const ym = today.slice(0, 7);
-    const cur = state.recent.filter(t => t.date.slice(0, 7) === ym);
-    const categories = CATS.map(c => ({...c, fact: +Math.max(c.fixed || 0, (c.fixed || 0) + cur.filter(t => t.category === c.name).reduce((s, t) => s + toEur(t.amount, t.currency, rates), 0)).toFixed(2)}));
+    const cur = state.recent.filter(t => t.date.slice(0, 7) === ym), pend = pendingPay(), tot = payTotal();
+    const categories = CATS.map(c => ({...c, fixed: tot[c.name] || 0, fact: +((pend[c.name] || 0) + cur.filter(t => t.category === c.name).reduce((s, t) => s + toEur(t.amount, t.currency, rates), 0)).toFixed(2)}));
     const days = Array.from({length: 30}, (_, i) => {
       const date = ym + '-' + String(i + 1).padStart(2, '0');
       return {date, spent: +cur.filter(t => t.date === date).reduce((s, t) => s + toEur(t.amount, t.currency, rates), 0).toFixed(2), limit: 7.17};
@@ -1031,8 +1036,8 @@ const Demo = (() => {
   const fail = m => { throw new Error(m); };
   return {
     getData: () => snapshot(),
-    getStats: () => ({today, categories: snapshot().categories, fixed: {'Житло (Гуртожиток)': 85},
-                      tx: all().map(t => [t.date, t.category, +t.eur.toFixed(2), t.note])}),
+    getStats: () => ({today, categories: snapshot().categories, pending: pendingPay(),
+                      tx: hist.map(r => [r[0], r[1], r[2], r[3], !!r[4]]).concat(state.recent.map(t => [t.date, t.category, +toEur(t.amount, t.currency, rates).toFixed(2), t.note, t.note === 'Гуртожиток']))}),
     addTransaction: t => { const row = next++; state.recent.unshift({...t, row}); return {row, data: snapshot()}; },
     deleteTransaction: row => { state.recent = state.recent.filter(t => t.row !== row); return snapshot(); },
     updateCategory: (row, amount, category) => { const t = state.recent.find(x => x.row === row); if (!t) fail('Рядок змінився'); t.category = category; return snapshot(); },
@@ -1055,13 +1060,10 @@ const Demo = (() => {
       return snapshot();
     },
     enableMonthClose: on => { state.close.auto = !!on; return snapshot(); },
-    setMonthArchive: on => { state.close.archive = !!on; if (on) state.close.auto = true; return snapshot(); },
     setBudgets: changes => {
       let saved = 0;
-      changes.forEach(ch => { const c = CATS.find(x => x.name === ch.name); if (!c) return;
-        if (ch.plan != null) c.plan = Math.round(ch.plan * 100) / 100;
-        if (ch.fixed != null) c.fixed = ch.fixed || 0;
-        saved++; });
+      changes.forEach(ch => { const c = CATS.find(x => x.name === ch.name); if (!c || ch.plan == null) return;
+        c.plan = Math.round(ch.plan * 100) / 100; saved++; });
       return {saved, skipped: [], conflicts: [], data: snapshot()};
     },
     editCategories: ops => {
@@ -1087,13 +1089,13 @@ const Demo = (() => {
     getArchive: () => {
       const by = {};
       hist.forEach(r => (by[r[0].slice(0, 7)] = by[r[0].slice(0, 7)] || []).push([r[0], r[1], r[2], r[3]]));
-      return {found: true, auto: state.close.archive,
+      return {found: true, auto: state.close.auto,
               months: Object.keys(by).sort().reverse().map(ym => ({ym, rows: by[ym].sort((a, b) => b[0].localeCompare(a[0]))}))};
     },
     app_closeMonth: ym => {
       if (getMonths().some(s => s.ym === ym)) fail('Цей місяць уже підсумовано');
       const s = summarize(ym); months.unshift(s); months.sort((a, b) => b.ym.localeCompare(a.ym)); state.close.pending = null;
-      if (state.close.archive) s.moved = s.count;
+      s.moved = s.count;
       return {summary: s, data: snapshot()};
     },
   };
@@ -1433,7 +1435,7 @@ function render() {
       <span class="nm">${esc(c.name)}</span>
       <span class="lf num" style="color:${lf < 0 ? 'var(--bad)' : 'inherit'}">${fmt(lf)}</span>
       <span class="bar"><i style="width:${Math.min(100, p * 100)}%;background:${s === 'ok' ? 'var(--c)' : `var(--${s})`}"></i></span>
-      <span class="meta num"><span>${c.fixed ? svg('repeat') + ' щомісяця · ' : ''}${fmt(c.fact, DISP, true)} з ${fmt(c.plan, DISP, true)}</span><span class="st ${s}">${s === 'ok' ? Math.round(p * 100) + '%' : `${ic} ${Math.round(p * 100)}%`}</span></span>
+      <span class="meta num"><span>${c.fixed ? `<span data-tip="${esc(`<b>Щомісячний платіж</b><br>${fmt(c.fixed)} — уже враховано в бюджеті`)}">${svg('repeat')}</span> ` : ''}${fmt(c.fact, DISP, true)} з ${fmt(c.plan, DISP, true)}</span><span class="st ${s}">${s === 'ok' ? Math.round(p * 100) + '%' : `${ic} ${Math.round(p * 100)}%`}</span></span>
     </button>`;
   }).join('');
 
@@ -1465,11 +1467,11 @@ function render() {
     const row = days.slice(i, i + 7);
     cells += row.map(dayCell).join('') + weekCell(row);
   }
-  // Темп місяця: скільки «можна було» витратити на сьогодні (фіксовані + рівна частина решти)
+  // Темп місяця: скільки «можна було» витратити на сьогодні (щомісячні платежі + рівна частина решти)
   const elapsed = Math.max(1, D.days.filter(d => d.date <= today).length), nDaysM = D.days.length || 30;
   const fixedSum = cats.reduce((s, c) => s + (c.fixed || 0), 0);
   const allowed = Math.min(plan, fixedSum + Math.max(0, plan - fixedSum) * elapsed / nDaysM), pace = allowed - spent;
-  // Прогноз: фіксовані платежі + змінні витрати в теперішньому темпі
+  // Прогноз: щомісячні платежі + змінні витрати в теперішньому темпі
   const proj = fixedSum + Math.max(0, spent - fixedSum) / elapsed * nDaysM;
 
   $('#sideSub').textContent = MONTHS[first.getMonth()] + ' ' + first.getFullYear();
@@ -1507,10 +1509,10 @@ function render() {
           <div class="legend">${legend}</div>
         </div>
         <div class="tiles">
-          <div class="tile ${pace < -.005 ? 'over' : ''}" data-tip="${esc(`<b>Темп місяця</b><br>за рівномірним графіком на сьогодні можна було витратити ${fmt(allowed)}${fixedSum ? ` (з них фіксовані ${fmt(fixedSum)})` : ''}<br>витрачено ${fmt(spent)}`)}"><span class="label">${pace < -.005 ? 'Понад графік' : 'Запас'}</span><b class="num">${fmt(Math.abs(pace))}</b><small class="num">≈ ${fmt(perDay)}/день до кінця</small></div>
+          <div class="tile ${pace < -.005 ? 'over' : ''}" data-tip="${esc(`<b>Темп місяця</b><br>за рівномірним графіком на сьогодні можна було витратити ${fmt(allowed)}${fixedSum ? ` (з них щомісячні платежі ${fmt(fixedSum)})` : ''}<br>витрачено ${fmt(spent)}`)}"><span class="label">${pace < -.005 ? 'Понад графік' : 'Запас'}</span><b class="num">${fmt(Math.abs(pace))}</b><small class="num">≈ ${fmt(perDay)}/день до кінця</small></div>
           <div class="tile ${r7.l && r7.s > r7.l + .005 ? 'over' : ''}" data-tip="${esc(`<b>Останні 7 днів</b><br>${fmt(r7.s)} з ${fmt(r7.l)}<br>велика закупка не страшна, якщо далі тиждень витрачати менше`)}"><span class="label">7 днів</span><b class="num">${fmt(r7.s)}</b><small class="num">з ${fmt(r7.l)}</small></div>
           <div class="tile ${wSpent > wLimit + .005 ? 'over' : ''}"><span class="label">Цей тиждень</span><b class="num">${fmt(wSpent)}</b><small class="num">з ${fmt(wLimit)}</small></div>
-          <div class="tile ${plan && proj > plan + .005 ? 'over' : ''}" data-tip="${esc(`<b>Прогноз на кінець місяця</b><br>фіксовані ${fmt(fixedSum)} + змінні в теперішньому темпі`)}"><span class="label">Прогноз</span><b class="num">${fmt(proj)}</b><small class="num">${plan ? (proj > plan ? 'на ' + fmt(proj - plan) + ' понад' : 'лишиться ' + fmt(plan - proj)) : ''}</small></div>
+          <div class="tile ${plan && proj > plan + .005 ? 'over' : ''}" data-tip="${esc(`<b>Прогноз на кінець місяця</b><br>щомісячні платежі ${fmt(fixedSum)} + змінні в теперішньому темпі`)}"><span class="label">Прогноз</span><b class="num">${fmt(proj)}</b><small class="num">${plan ? (proj > plan ? 'на ' + fmt(proj - plan) + ' понад' : 'лишиться ' + fmt(plan - proj)) : ''}</small></div>
         </div>
       </section>
       <section class="card" id="cal" style="--i:2">
@@ -1791,18 +1793,13 @@ function periodRange(p, today, first) {
   }
 }
 
-/** Витрати за період + фіксовані (гуртожиток) за кожен місяць періоду */
+/** Витрати за період; t[4] — щомісячний платіж. Платежі цього місяця, які ще не записані, — як зарезервовані */
 function periodTx(from, to) {
-  const out = S.tx.filter(t => t[0] >= from && t[0] <= to).map(t => ({date: t[0], category: t[1], eur: t[2], note: t[3]}));
-  const firstData = S.tx.reduce((m, t) => t[0] < m ? t[0] : m, S.today);
-  for (let m = monthStart(from); m <= to; m = monthStart(m, 1)) {
-    if (m < monthStart(firstData)) continue;
-    Object.keys(S.fixed || {}).forEach(cat => {
-      const have = out.filter(t => t.category === cat && ymOf(t.date) === ymOf(m)).reduce((s, t) => s + t.eur, 0);
-      const add = S.fixed[cat] - have;
-      if (add > 0.005) out.push({date: m < from ? from : m, category: cat, eur: add, note: '', fixed: true});
-    });
-  }
+  const out = S.tx.filter(t => t[0] >= from && t[0] <= to).map(t => ({date: t[0], category: t[1], eur: t[2], note: t[3], fixed: !!t[4]}));
+  const m = monthStart(S.today);
+  if (m >= monthStart(from) && m <= to) Object.keys(S.pending || {}).forEach(cat => {
+    if (S.pending[cat] > .005) out.push({date: m < from ? from : m, category: cat, eur: S.pending[cat], note: '', fixed: true});
+  });
   return out;
 }
 
@@ -1837,7 +1834,7 @@ function renderStats() {
     <div class="kpi"><span class="label">Витрачено</span><b class="num">${fmt(total)}</b><small>${R.pFrom ? deltaHTML(total, prevTotal) + ' ' + esc(R.label) : periodTitle}</small></div>
     <div class="kpi"><span class="label">У середньому на день</span><b class="num">${fmt(total / nDays)}</b><small>за ${plural(nDays, 'день', 'дні', 'днів')}</small></div>
     <div class="kpi"><span class="label">Покупок</span><b class="num">${buys.length}</b><small>≈ ${(buys.length / nDays).toFixed(1).replace('.', ',')} на день</small></div>
-    <div class="kpi"><span class="label">Середній чек</span><b class="num">${fmt(avgCheck)}</b><small>без фіксованих платежів</small></div>
+    <div class="kpi"><span class="label">Середній чек</span><b class="num">${fmt(avgCheck)}</b><small>без щомісячних платежів</small></div>
   </div>`;
 
   box.innerHTML = `
@@ -1930,15 +1927,15 @@ function drawLine(wrap, o) {
   </svg>`;
 }
 
-/* Карта року (ПК): кожна клітинка — день, колір — скільки витрачено. Без фіксованих платежів, з урахуванням фільтра категорії */
+/* Карта року (ПК): кожна клітинка — день, колір — скільки витрачено. Без щомісячних платежів, з урахуванням фільтра категорії */
 function renderHeat() {
   const el = $('#stHeat'); if (!el) return;
   const end = S.today, weeks = 53;
   const start = addDays(end, -((parseD(end).getDay() + 6) % 7) - (weeks - 1) * 7);
-  const fixed = S.fixed || {}, by = {};
+  const by = {};
   S.tx.forEach(t => {
     if (t[0] < start || t[0] > end) return;
-    if (ST_CAT ? t[1] !== ST_CAT : fixed[t[1]]) return;
+    if (ST_CAT ? t[1] !== ST_CAT : t[4]) return;
     by[t[0]] = (by[t[0]] || 0) + t[2];
   });
   const vals = Object.values(by).filter(v => v > 0).sort((a, b) => a - b);
@@ -1961,7 +1958,7 @@ function renderHeat() {
   [[0, 'Пн'], [2, 'Ср'], [4, 'Пт'], [6, 'Нд']].forEach(([d, l]) => labels += `<text class="ax" x="0" y="${T + d * (C + G) + 10}">${l}</text>`);
   const W = L + weeks * (C + G), H = T + 7 * (C + G);
   const top = Object.keys(by).sort((a, b) => by[b] - by[a])[0];
-  el.innerHTML = `<h2>Рік по днях <small>${ST_CAT ? esc(short(ST_CAT)) : 'без фіксованих платежів'} · ${plural(Object.keys(by).length, 'день', 'дні', 'днів')} з покупками</small></h2>
+  el.innerHTML = `<h2>Рік по днях <small>${ST_CAT ? esc(short(ST_CAT)) : 'без щомісячних платежів'} · ${plural(Object.keys(by).length, 'день', 'дні', 'днів')} з покупками</small></h2>
     <div class="heat"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Витрати по днях за рік">${labels}${cells}</svg></div>
     <div class="ckey heat-key"><span>менше ${FILL.map(f => `<i style="background:${f}"></i>`).join('')} більше</span>${top ? `<span>найдорожчий день: <b style="color:var(--ink)">${dayLabel(top)}</b> — ${fmt(by[top])}</span>` : ''}</div>`;
 }
@@ -2031,7 +2028,8 @@ function renderInsights(x) {
   const out = [];
   const by = {}; x.allCur.forEach(t => by[t.category] = (by[t.category] || 0) + t.eur);
   const sum = Object.values(by).reduce((a, b) => a + b, 0);
-  const topVar = Object.keys(by).filter(n => !(S.fixed || {})[n]).sort((a, b) => by[b] - by[a])[0];
+  const vby = {}; x.allCur.forEach(t => { if (!t.fixed) vby[t.category] = (vby[t.category] || 0) + t.eur; });
+  const topVar = Object.keys(vby).sort((a, b) => vby[b] - vby[a])[0];
   if (PERIOD === 'month' && x.planMonth) {
     const elapsed = daysBetween(x.R.from, x.R.to), days = dim(x.R.from);
     const variable = x.cur.filter(t => !t.fixed).reduce((s, t) => s + t.eur, 0), fixed = x.total - variable;
@@ -2044,7 +2042,7 @@ function renderInsights(x) {
     const d = x.total - x.prevTotal;
     out.push([d > 0 ? 'trendUp' : 'trendDown', `Порівняно ${esc(x.R.label)} — на <b>${fmt(Math.abs(d))} ${d > 0 ? 'більше' : 'менше'}</b>.`]);
   }
-  if (topVar && !ST_CAT) out.push(['star', `Найбільше змінних витрат — <b>${esc(short(topVar))}</b>: ${fmt(by[topVar])}, це ${Math.round(by[topVar] / sum * 100)}% усіх витрат.`]);
+  if (topVar && !ST_CAT) out.push(['star', `Найбільше змінних витрат — <b>${esc(short(topVar))}</b>: ${fmt(vby[topVar])}, це ${Math.round(vby[topVar] / sum * 100)}% усіх витрат.`]);
   const smallN = x.real.filter(t => t.eur < 5), smallSum = smallN.reduce((s, t) => s + t.eur, 0);
   if (smallN.length >= 5) out.push(['receipt', `Дрібні покупки до ${fmt(5, DISP, true)} — <b>${smallN.length} шт.</b> на суму <b>${fmt(smallSum)}</b>. Непомітно, але складається.`]);
   const noSpend = Array.from({length: daysBetween(x.R.from, x.R.to)}, (_, i) => addDays(x.R.from, i)).filter(d => !x.real.some(t => t.date === d)).length;
@@ -2072,11 +2070,17 @@ function renderMonths() {
     </button>`;
   const saved = list.reduce((s, m) => s + m.left, 0);
   box.innerHTML = `<h2>Підсумки місяців <small>${list.length ? `разом ${saved >= 0 ? 'зекономлено' : 'перевитрата'} ${fmt(Math.abs(saved))}` : ''}</small></h2>
-    ${c.pending ? `<div class="pending"><span class="ic" style="color:var(--accent)">${svg('archive')}</span><div><b>${monthName(c.pending)} ще не підсумовано</b>Підсумок по категоріях${c.email ? ' і лист на пошту' : ''}</div><button class="btn btn-primary btn-sm" data-close-month="${c.pending}">Підсумувати</button></div>` : ''}
+    ${c.pending ? `<div class="pending"><span class="ic" style="color:var(--accent)">${svg('archive')}</span><div><b>${monthName(c.pending)} ще не підсумовано</b>Підсумок, перенесення в «Архів»${c.email ? ' і лист на пошту' : ''}</div><button class="btn btn-primary btn-sm" data-close-month="${c.pending}">Підсумувати</button></div>` : ''}
     ${row(cur)}${list.map(row).join('')}
-    <div class="mrow" style="grid-template-columns:minmax(0,1fr) auto;align-items:center">
-      <span><span class="nm">Автопідсумок 1-го числа</span><br><span class="s">${c.auto ? 'Увімкнено' : 'Вимкнено'} · ${c.archive ? 'з перенесенням в «Архів»' : 'архів робить ваша кнопка «Закрити місяць»'}</span></span>
-      <button class="btn btn-sm ${c.auto ? 'btn-quiet' : 'btn-primary'}" data-close-auto="${c.auto ? '0' : '1'}">${c.auto ? 'Вимкнути' : 'Увімкнути'}</button>
+    ${closeStatusHTML()}`;
+}
+/** Рядок стану «Закриття місяця» — сам перемикач у Налаштуваннях */
+function closeStatusHTML() {
+  const c = D.close || {};
+  return `<div class="arc-head" style="margin-top:var(--s3)">
+      <span class="ic">${svg('calendar')}</span>
+      <div><b>Закриття місяця</b><small>${c.auto ? 'Автоматично 1-го числа: архів, новий місяць, лист' : 'Вручну — кнопкою «Підсумувати»'}</small></div>
+      <button class="btn btn-quiet btn-sm" data-open-plus>Змінити</button>
     </div>`;
 }
 function showMonth(key) {
@@ -2104,12 +2108,11 @@ function confirmClose(ym) {
   $('#monthBody').innerHTML = `<h3>${svg('archive')} Підсумувати ${monthName(ym).toLowerCase()}?</h3>
     <ol class="steps">
       <li>Рядок з підсумком зʼявиться на аркуші <b>«Підсумки місяців»</b> — враховуються і «Транзакції», і «Архів»</li>
-      ${c.archive
-        ? '<li>Витрати місяця <b>переносяться на аркуш «Архів»</b> і зникають з «Транзакцій»</li><li>Дашборд перемикається на новий місяць</li>'
-        : '<li><b>Архів і дашборд не чіпаються</b> — їх, як і раніше, закриває ваша кнопка</li>'}
+      <li>Витрати місяця <b>переносяться на аркуш «Архів»</b> і зникають з «Транзакцій»</li>
+      <li>Дашборд перемикається на новий місяць</li>
       ${c.email ? '<li>Вам прийде лист з підсумком</li>' : ''}
     </ol>
-    <button class="btn btn-primary" id="closeGo" data-ym="${ym}">${c.archive ? 'Підсумувати й перенести' : 'Підсумувати'}</button>
+    <button class="btn btn-primary" id="closeGo" data-ym="${ym}">Підсумувати й перенести</button>
     <button class="btn btn-quiet" data-close>Скасувати</button>`;
   openSheet('#monthSheet');
 }
@@ -2117,7 +2120,6 @@ function confirmClose(ym) {
 function arcMonth(m) {
   const cats = {};
   m.rows.forEach(r => cats[r[1]] = (cats[r[1]] || 0) + r[2]);
-  D.categories.forEach(c => { if (c.fixed && (cats[c.name] || 0) < c.fixed) cats[c.name] = c.fixed; }); // гуртожиток, як на дашборді
   const total = Object.values(cats).reduce((a, b) => a + b, 0);
   const sum = (D.months || []).find(s => s.ym === m.ym);
   const plan = sum ? sum.plan : D.categories.reduce((s, c) => s + c.plan, 0);
@@ -2127,7 +2129,7 @@ function arcMonth(m) {
 function renderArchive() {
   const box = $('#archive'); if (!box) return;
   if (!A) { box.innerHTML = `<div class="sk-card"><div class="sk" style="height:48px"></div><div class="sk" style="height:72px"></div><div class="sk" style="height:72px"></div></div>`; return; }
-  const c = D.close || {}, on = !!A.auto;
+  const c = D.close || {};
   const q = ARC_Q.trim().toLowerCase().replace(',', '.');
   const match = r => !q || (r[3] + ' ' + r[1] + ' ' + r[0]).toLowerCase().includes(q) || String(r[2]).includes(q);
   const months = A.months.map(m => ({...m, rows: m.rows.filter(match)})).filter(m => m.rows.length || !q);
@@ -2135,13 +2137,8 @@ function renderArchive() {
 
   const head = `<section class="card">
     <h2>Архів <small>${A.months.length ? `${plural(A.months.length, 'місяць', 'місяці', 'місяців')} · ${fmt(total)}` : ''}</small></h2>
-    <div class="arc-head">
-      <span class="ic">${svg('calendar')}</span>
-      <div><b>Автоперенесення 1-го числа</b><small>${on ? 'Увімкнено: підсумок, перенесення в архів і лист' : 'Вимкнено: дані переносить ваша кнопка на дашборді'}</small></div>
-      <button class="btn btn-sm ${on ? 'btn-quiet' : 'btn-primary'}" data-arc-auto="${on ? '0' : '1'}">${on ? 'Вимкнути' : 'Увімкнути'}</button>
-    </div>
-    ${on ? `<div class="arc-warn">${svg('alert')}<span><b style="color:var(--ink)">Стару кнопку «Закрити місяць» на дашборді більше не натискайте</b> — тепер це робить додаток. Інакше дані можуть перенестися двічі.</span></div>` : ''}
-    ${c.pending ? `<div class="pending" style="margin:var(--s3) 0 0"><span class="ic" style="color:var(--accent)">${svg('archive')}</span><div><b>${monthName(c.pending)} ще в «Транзакціях»</b>${on ? 'Можна перенести в архів зараз' : 'Підсумувати зараз (перенесе ваша кнопка)'}</div><button class="btn btn-primary btn-sm" data-close-month="${c.pending}">${on ? 'Перенести' : 'Підсумувати'}</button></div>` : ''}
+    ${closeStatusHTML()}
+    ${c.pending ? `<div class="pending" style="margin:var(--s3) 0 0"><span class="ic" style="color:var(--accent)">${svg('archive')}</span><div><b>${monthName(c.pending)} ще в «Транзакціях»</b>Можна підсумувати й перенести в архів зараз</div><button class="btn btn-primary btn-sm" data-close-month="${c.pending}">Перенести</button></div>` : ''}
   </section>`;
 
   if (!A.found || !A.months.length) {
@@ -2236,7 +2233,7 @@ function archiveDesk(months, q) {
           </label>
         </div>
         <div class="ad-tiles">
-          <div class="tile"><span class="label">Витрачено</span><b class="num">${fmt(s.total)}</b><small>${c ? deltaHTML(s.total, c.total) + ' до ' + MONTHS_G[+cmpM.ym.slice(5) - 1] : 'разом з фіксованими'}</small></div>
+          <div class="tile"><span class="label">Витрачено</span><b class="num">${fmt(s.total)}</b><small>${c ? deltaHTML(s.total, c.total) + ' до ' + MONTHS_G[+cmpM.ym.slice(5) - 1] : 'разом із щомісячними платежами'}</small></div>
           <div class="tile"><span class="label">Бюджет</span><b class="num">${fmt(s.plan)}</b><small>${Math.round(s.total / (s.plan || 1) * 100)}% використано</small></div>
           <div class="tile"><span class="label">${ok ? 'Зекономлено' : 'Перевитрата'}</span><b class="num" style="color:${ok ? 'var(--ok)' : 'var(--bad)'}">${fmt(Math.abs(s.left))}</b><small>&nbsp;</small></div>
           <div class="tile"><span class="label">На день</span><b class="num">${fmt(s.total / days)}</b><small>${plural(n, 'покупка', 'покупки', 'покупок')}</small></div>
@@ -2417,14 +2414,14 @@ function editUpdate() {
 }
 
 /* ---------- бюджет: редагування з додатка → колонка «План» на дашборді ---------- */
-let BUD = null, BUDF = null; // чернетка: {назва: сума в €}, {назва: фіксована щомісяця}
+let BUD = null; // чернетка: {назва: сума в €}
 const budNum = s => { const n = parseFloat(String(s).replace(/[\s €]/g, '').replace(',', '.')); return isNaN(n) ? NaN : Math.round(n * 100) / 100; };
 const budVal = n => (Math.round(n * 100) / 100).toString().replace('.', ',');
 const prevCats = () => { const m = (D.months || [])[0]; return m && m.cats ? m : null; };
 
 function openBudget() {
   if (!D) return;
-  BUD = {}; BUDF = {}; D.categories.forEach(c => { BUD[c.name] = c.plan; BUDF[c.name] = c.fixed > 0; });
+  BUD = {}; D.categories.forEach(c => { BUD[c.name] = c.plan; });
   const pm = prevCats(), editable = D.categories.filter(c => !c.locked).length;
   $('#budBody').innerHTML = `
     <div class="note">Зміни записуються в колонку «План» аркуша «Дашборд та Бюджет». Денні ліміти та залишки таблиця перерахує сама.${D.sheetUrl ? ` <a href="${esc(D.sheetUrl)}" target="_blank" rel="noopener" style="color:var(--accent)">Відкрити таблицю</a>` : ''}</div>
@@ -2436,13 +2433,13 @@ function openBudget() {
       const pv = pm && pm.cats[c.name] != null ? ` · ${MONTHS_G[+pm.ym.slice(5) - 1].slice(0, 3)}. ${fmt(pm.cats[c.name], 'EUR', true)}` : '';
       return `<div class="bud" data-bud-row="${esc(c.name)}" style="--c:${catColor(c.name)}">
         <span class="ic">${catIcon(c.name)}</span>
-        <span class="nm">${esc(short(c.name))}<small class="num">витрачено ${fmt(c.fact, 'EUR', true)}${pv}</small>
-          <button class="fx" data-bud-fix="${esc(c.name)}" aria-pressed="${c.fixed > 0}" title="Сума рахується з 1-го числа щомісяця, без окремого запису — як оренда чи гуртожиток">${svg('repeat')} щомісяця</button></span>
+        <span class="nm">${esc(short(c.name))}<small class="num">витрачено ${fmt(c.fact, 'EUR', true)}${pv}${c.fixed ? ` · ${svg('repeat')} платежі ${fmt(c.fixed, 'EUR', true)}` : ''}</small></span>
         ${c.locked ? `<span class="lock"><b class="num">${fmt(c.plan, 'EUR')}</b>формула в таблиці</span>` : `<span class="step">
           <button data-bud-step="-5" aria-label="Менше на 5 €">−</button>
           <label>€<input data-bud="${esc(c.name)}" inputmode="decimal" enterkeyhint="done" value="${budVal(c.plan)}" aria-label="Бюджет: ${esc(short(c.name))}, євро" autocomplete="off"></label>
           <button data-bud-step="5" aria-label="Більше на 5 €">+</button></span>`}
-      </div>`; }).join('')}</div>`;
+      </div>`; }).join('')}</div>
+    <div class="hint" style="margin-top:var(--s3)">Оренда, підписки, телефон — у <button class="btn-link" data-open-plus>Налаштування → Щомісячні платежі</button>: сума резервується в бюджеті й сама записується у свій день.</div>`;
   budUpdate();
   if (D.hub) $('#budBody').insertAdjacentHTML('beforeend', `<div class="bud-tools" style="margin-top:var(--s3)"><button class="btn btn-quiet btn-sm" data-open-sheets>${svg('table')} Інша таблиця або нова порожня</button></div>`);
   openSheet('#budgetSheet');
@@ -2451,12 +2448,7 @@ function openBudget() {
 function budChanges() {
   const out = [];
   D.categories.forEach(c => {
-    const v = c.locked || isNaN(BUD[c.name]) ? c.plan : BUD[c.name];
-    const ch = {name: c.name};
-    if (!c.locked && !isNaN(BUD[c.name]) && Math.abs(BUD[c.name] - c.plan) > .005) { ch.plan = BUD[c.name]; ch.was = c.plan; }
-    const fx = BUDF[c.name] ? v : 0;
-    if (Math.abs(fx - (c.fixed || 0)) > .005) { ch.fixed = fx; ch.fixedWas = c.fixed || 0; }
-    if (ch.plan != null || ch.fixed != null) out.push(ch);
+    if (!c.locked && !isNaN(BUD[c.name]) && Math.abs(BUD[c.name] - c.plan) > .005) out.push({name: c.name, plan: BUD[c.name], was: c.plan});
   });
   return out;
 }
@@ -2470,8 +2462,7 @@ function budUpdate() {
     (DISP !== 'EUR' ? `≈ ${fmt(total)}` : `≈ ${fmt(total, 'UAH')}`);
   document.querySelectorAll('[data-bud-row]').forEach(r => {
     const c = D.categories.find(x => x.name === r.dataset.budRow), v = BUD[c.name];
-    const fxChg = !!BUDF[c.name] !== (c.fixed > 0);
-    r.classList.toggle('chg', fxChg || (!c.locked && !isNaN(v) && Math.abs(v - c.plan) > .005));
+    r.classList.toggle('chg', !c.locked && !isNaN(v) && Math.abs(v - c.plan) > .005);
     r.classList.toggle('bad', !c.locked && (isNaN(v) || v < 0));
   });
   const n = budChanges().length, b = $('#budSave');
@@ -2489,7 +2480,7 @@ async function saveBudgets(changes, undoable) {
   } else if (undoable) {
     toast(`Бюджет оновлено в таблиці · ${plural(res.saved, 'категорія', 'категорії', 'категорій')}`, 'Повернути', async () => {
       $('#toast').classList.remove('on');
-      try { await saveBudgets(changes.map(c => ({name: c.name, plan: c.plan != null ? c.was : undefined, was: c.plan, fixed: c.fixed != null ? c.fixedWas : undefined})), false); toast('Попередній бюджет повернуто'); }
+      try { await saveBudgets(changes.map(c => ({name: c.name, plan: c.was, was: c.plan})), false); toast('Попередній бюджет повернуто'); }
       catch (err) { toast(friendly(err), '', null, 'error'); }
     });
   }
@@ -2564,10 +2555,10 @@ function catUpdate() {
   b.textContent = n ? `Зберегти в таблицю · ${plural(n, 'зміна', 'зміни', 'змін')}` : 'Зберегти в таблицю';
 }
 
-/* ---------- налаштування: залишок місяця, скарбничка, повторювані витрати, лист ---------- */
+/* ---------- налаштування: залишок місяця, скарбничка, щомісячні платежі, закриття місяця, лист ---------- */
 function openPlus() {
   if (!D) return;
-  const x = D.extras || {}, mode = x.mode || 'off', roll = x.roll, ym = ymOf(D.today);
+  const x = D.extras || {}, mode = x.mode || 'off', roll = x.roll, ym = ymOf(D.today), cl = D.close || {};
   const rm = roll ? MONTHS[+roll.ym.slice(5) - 1] : '';
   const nextOf = r => { const m = r.last === ym ? monthStart(D.today, 1) : monthStart(D.today); return `${Math.min(r.day, dim(m))} ${MONTHS_G[+m.slice(5, 7) - 1]}`; };
   const recur = x.recur || [];
@@ -2584,20 +2575,25 @@ function openPlus() {
         <button class="btn btn-quiet" data-pig-out ${x.piggy > 0 ? '' : 'disabled'}>Зняти</button></div>
         <div class="hint">«Взяти в бюджет» — сума додасться до бюджету цього місяця. «Зняти» — просто зменшить скарбничку, напр. якщо ці гроші витратили окремо.</div>` : ''}
     </section>
-    <section class="pl-sec"><h4>${svg('repeat')} Повторювані витрати</h4>
-      <div class="hint">Записуються в «Транзакції» самі у вказаний день місяця — підписки, телефон, спортзал. Нова почне записуватись з наступного такого дня.</div>
+    <section class="pl-sec"><h4>${svg('repeat')} Щомісячні платежі</h4>
+      <div class="hint">Оренда, підписки, телефон, спортзал. Сума одразу резервується в бюджеті місяця, а у вказаний день сама записується в «Транзакції». Якщо цього місяця день уже минув — почне з наступного.</div>
       ${recur.map(r => `<div class="r-row" style="--c:${catColor(r.category)}"><span class="ic">${catIcon(r.category)}</span>
-        <span>${esc(r.note || short(r.category))}<small>${r.day}-го щомісяця · ${esc(short(r.category))} · наступний: ${nextOf(r)}</small></span>
+        <span>${esc(r.note || short(r.category))}<small>${r.day}-го щомісяця · ${esc(short(r.category))} · ${r.last === ym ? 'наступний: ' + nextOf(r) : 'зарезервовано, запишеться ' + nextOf(r)}</small></span>
         <b class="num">${fmtRaw(r.amount, r.currency || 'EUR')}</b>
         <button class="ib" data-r-del="${esc(r.id)}" title="Прибрати" aria-label="Прибрати">${svg('trash')}</button></div>`).join('')}
       <div class="r-add">
-        <div class="box"><input id="rNote" placeholder="Назва, напр. Spotify" maxlength="60" autocomplete="off"></div>
+        <div class="box"><input id="rNote" placeholder="Назва, напр. Гуртожиток" maxlength="60" autocomplete="off"></div>
         <div class="box"><input id="rAmt" inputmode="decimal" placeholder="Сума, €" autocomplete="off"></div>
         <select class="selx" id="rCat" aria-label="Категорія">${D.categories.map(c => `<option value="${esc(c.name)}">${esc(short(c.name))}</option>`).join('')}</select>
         <div class="box"><input id="rDay" inputmode="numeric" placeholder="День" value="1" aria-label="День місяця" autocomplete="off"></div>
-        <button class="btn btn-secondary" data-r-add>${svg('plus')} Додати повторювану</button>
+        <button class="btn btn-secondary" data-r-add>${svg('plus')} Додати платіж</button>
       </div>
       <div class="errmsg" id="rErr" role="alert"></div>
+    </section>
+    <section class="pl-sec"><h4>${svg('archive')} Закриття місяця</h4>
+      <button type="button" class="wk-toggle" id="closeTog" aria-pressed="${!!cl.auto}">${svg('calendar')}<span><b>Автоматично 1-го числа</b>підсумок минулого місяця, записи — в «Архів», дашборд — на новий місяць${cl.email ? ', лист на пошту' : ''}</span><span class="sw" aria-hidden="true"></span></button>
+      ${cl.pending ? `<div class="pending" style="margin:var(--s3) 0 0"><span class="ic" style="color:var(--accent)">${svg('archive')}</span><div><b>${monthName(cl.pending)} ще не закрито</b>Можна зробити це зараз</div><button class="btn btn-primary btn-sm" data-close-month="${cl.pending}">Підсумувати</button></div>`
+        : `<div class="hint" style="margin-top:var(--s2)">${cl.auto ? 'Нічого натискати не треба.' : 'Вимкнено: коли настане новий місяць, тут зʼявиться кнопка «Підсумувати».'}</div>`}
     </section>
     <section class="pl-sec"><h4>${svg('calendar')} Підсумок тижня на пошту</h4>
       <button type="button" class="wk-toggle" id="digTog" aria-pressed="${!!x.digest}">${svg('receipt')}<span><b>Щонеділі ввечері</b>${x.email ? esc(x.email) + ' · ' : ''}витрати тижня, запас від графіка, що майже вичерпано</span><span class="sw" aria-hidden="true"></span></button>
@@ -2826,16 +2822,24 @@ document.addEventListener('click', async e => {
     plusSave(t, {recur: list}, `Додано: ${note || short($('#rCat').value)} щомісяця ${day}-го`);
   }
   else if (ds.rDel) {
-    // без «Ви впевнені?»: прибираємо одразу, у сповіщенні — «Повернути». Уже записані витрати лишаються в таблиці
+    // без «Ви впевнені?»: прибираємо одразу, у сповіщенні — «Повернути». Уже записані платежі лишаються в таблиці
     const old = (D.extras || {}).recur || [], gone = old.find(r => r.id === ds.rDel);
     try {
       D = await busy(t, '…', () => api('setExtras', {recur: old.filter(r => r.id !== ds.rDel)}));
       render(); openPlus();
-      toast(`Прибрано: ${gone ? gone.note || short(gone.category) : 'повторювану витрату'}`, 'Повернути', async () => {
+      toast(`Прибрано: ${gone ? gone.note || short(gone.category) : 'щомісячний платіж'}`, 'Повернути', async () => {
         $('#toast').classList.remove('on');
-        try { D = await api('setExtras', {recur: old}); render(); if ($('#plusSheet').classList.contains('on')) openPlus(); toast('Повторювану витрату повернуто'); }
+        try { D = await api('setExtras', {recur: old}); render(); if ($('#plusSheet').classList.contains('on')) openPlus(); toast('Платіж повернуто'); }
         catch (err) { toast(friendly(err), '', null, 'error'); }
       });
+    } catch (err) { toast(friendly(err), '', null, 'error'); }
+  }
+  else if (t.id === 'closeTog') {
+    const on = t.getAttribute('aria-pressed') !== 'true';
+    try {
+      D = await busy(t, '…', () => api('enableMonthClose', on));
+      render(); openPlus(); if (A) { A.auto = on; renderArchive(); }
+      toast(on ? '1-го числа місяць закриється сам: архів, новий місяць, лист' : 'Автоматичне закриття вимкнено — підсумовуйте кнопкою');
     } catch (err) { toast(friendly(err), '', null, 'error'); }
   }
   else if (t.id === 'digTog') {
@@ -2915,9 +2919,6 @@ document.addEventListener('click', async e => {
       openBudget();
     } catch (err) { syncMark('err'); toast(friendly(err), '', null, 'error'); catUpdate(); }
   }
-  else if (ds.budFix) {
-    BUDF[ds.budFix] = !BUDF[ds.budFix]; t.setAttribute('aria-pressed', BUDF[ds.budFix]); budUpdate();
-  }
   else if (ds.budStep) {
     const inp = t.parentElement.querySelector('input'), name = inp.dataset.bud;
     const v = isNaN(BUD[name]) ? 0 : BUD[name], st = +ds.budStep;
@@ -2976,20 +2977,8 @@ document.addEventListener('click', async e => {
 
   /* архів */
   else if (ds.arc) { ARC_OPEN = DESK.matches ? ds.arc : ARC_OPEN === ds.arc ? null : ds.arc; hideTip(); renderArchive(); }
-  else if (ds.arcAuto) {
-    try {
-      await busy(t, '…', async () => { D = await api('setMonthArchive', ds.arcAuto === '1'); });
-      if (A) A.auto = !!(D.close && D.close.archive);
-      render(); renderArchive();
-      toast(D.close.archive ? 'Готово: 1-го числа місяць перенесеться в архів сам' : 'Автоперенесення вимкнено');
-    } catch (err) { toast(friendly(err), '', null, 'error'); }
-  }
 
   /* підсумки місяців */
-  else if (ds.closeAuto) {
-    try { await busy(t, '…', async () => { D = await api('enableMonthClose', ds.closeAuto === '1'); }); render(); toast(D.close.auto ? 'Підсумок буде автоматично 1-го числа' : 'Автопідсумок вимкнено'); }
-    catch (err) { toast(friendly(err), '', null, 'error'); }
-  }
   else if (ds.closeMonth) confirmClose(ds.closeMonth);
   else if (t.id === 'closeGo') {
     try {
