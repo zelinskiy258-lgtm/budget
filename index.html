@@ -283,8 +283,21 @@ button:disabled{cursor:default;opacity:.55}
 .sh-row button.nm{min-height:2.5rem}
 .sh-row a.ib{text-decoration:none}
 #sheetsSheet .btn:not(.btn-sm),.conn .sh-list+.btn{width:100%}
-.sh-new{display:flex;gap:var(--s2);margin-bottom:var(--s2)}
-.sh-new .box{flex:1;margin:0}
+/* поле + кнопка в один ряд: кнопки однакової ширини, тож усі поля вирівняні по одній лінії */
+.sh-new{display:grid;grid-template-columns:minmax(0,1fr) 8.5rem;gap:var(--s2);align-items:stretch;margin-bottom:var(--s2)}
+.sh-new .box{margin:0;min-width:0}
+#sheetsSheet .sh-new .btn,.sh-new .btn{width:auto;min-width:0;margin:0;padding:0 .75em}
+.sh-new .btn + .btn{grid-column:2}
+#sheetsSheet .f{margin-bottom:var(--s4)}
+#sheetsSheet .sh-list{margin-bottom:var(--s5)}
+#sheetsSheet .acct{margin-top:0}
+/* телефон: акаунт — аватар і адреса в рядку, кнопка «Змінити акаунт» на всю ширину під ними */
+@media(max-width:520px){
+  .acct{display:grid;grid-template-columns:2.25rem minmax(0,1fr);gap:var(--s3)}
+  .acct .who{min-width:0}
+  .acct > .btn{grid-column:1 / -1;width:100%}
+  .sh-new{grid-template-columns:minmax(0,1fr) 7.5rem}
+}
 
 /* встановлювана програма: підключення */
 /* поки таблиці немає — ховаємо меню й кнопки, які без неї нічого не можуть */
@@ -946,7 +959,7 @@ a.btn{text-decoration:none}
 /* ---------- дані: Apps Script або демо ---------- */
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 // Версія інтерфейсу — має збігатися з BUDGET_APP.BUILD у BudgetApp.gs
-const BUILD = '2026-11-15.13';
+const BUILD = '2026-11-15.14';
 // Встановлювана програма (GitHub Pages): той самий інтерфейс, вхід через Google, дані — через Apps Script API
 const PWA = !IS_GAS && !!window.BUDGET_PWA;
 const CLOUD = window.BUDGET_CLOUD || {};
@@ -2668,10 +2681,10 @@ function openSheets() {
     <span class="flabel">Таблиці цього акаунта</span>
     ${sheetRows(h)}
     <div class="f"><label for="shNewName">Нова порожня таблиця</label>
-      <div class="sh-new"><div class="box"><input id="shNewName" placeholder="Напр. «Поїздка», «Спільний бюджет»" maxlength="60" autocomplete="off"></div>
+      <div class="sh-new"><div class="box"><input id="shNewName" placeholder="Напр. Поїздка" maxlength="60" autocomplete="off"></div>
       <button class="btn btn-primary" data-sh-new>${svg('plus')} Створити</button></div></div>
     <div class="f"><label for="shUrl">Або підключити наявну таблицю</label>
-      <div class="sh-new"><div class="box"><input id="shUrl" placeholder="docs.google.com/spreadsheets/d/…" autocomplete="off" spellcheck="false"></div>
+      <div class="sh-new"><div class="box"><input id="shUrl" placeholder="Посилання на таблицю" autocomplete="off" spellcheck="false"></div>
       <button class="btn btn-secondary" data-sh-use>Підключити</button></div></div>
     <div class="f"><label for="shRename">Назва відкритої таблиці</label>
       <div class="sh-new"><div class="box"><input id="shRename" value="${esc(D.sheetName || '')}" maxlength="60" autocomplete="off"></div>
