@@ -769,6 +769,21 @@ a.btn{text-decoration:none}
 .sheet:not(.on){visibility:hidden}
 .sheet.on{transition:transform var(--mid) var(--ease),opacity var(--mid),visibility 0s}
 .grab{width:2.5rem;height:.25rem;border-radius:999px;background:var(--line);margin:0 auto var(--s4)}
+.sh-x{display:none}
+/* Телефон: панелі (налаштування, бюджет, нова витрата…) — окремий екран на всю висоту, а не картка, що виїжджає знизу.
+   Нічого не визирає позаду, «Закрити» — хрестик угорі, який лишається на місці під час прокрутки */
+@media(max-width:899px){
+  .sheet{top:0;bottom:0;max-width:none;max-height:none;height:var(--vh);border-radius:0;
+    padding:calc(env(safe-area-inset-top) + var(--s4)) var(--s4) calc(env(safe-area-inset-bottom) + var(--s5));
+    overscroll-behavior:contain;box-shadow:none}
+  .sheet .grab{display:none}
+  .sh-x{position:sticky;top:0;z-index:3;display:grid;place-items:center;float:right;width:var(--tap);height:var(--tap);margin:-.25rem -.25rem 0 var(--s2);
+    border-radius:50%;background:var(--raise);color:var(--ink);font-size:1.25rem;box-shadow:0 0 0 4px var(--card)}
+  .sheet h3{min-height:var(--tap);margin-bottom:var(--s3)}
+  .scrim{display:none}
+  /* періоди статистики не «пливуть» над вмістом під час прокрутки */
+  .st-bar{position:static;margin-top:0;background:none}
+}
 .sheet h3{font-size:var(--fs-lg);font-weight:700;margin-bottom:var(--s4);display:flex;align-items:center;gap:var(--s2)}
 .f{margin-bottom:var(--s4)}
 .f > label,.flabel{display:block;font-size:var(--fs-sm);font-weight:600;color:var(--ink);margin-bottom:.375rem}
@@ -959,7 +974,7 @@ a.btn{text-decoration:none}
 /* ---------- дані: Apps Script або демо ---------- */
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 // Версія інтерфейсу — має збігатися з BUDGET_APP.BUILD у BudgetApp.gs
-const BUILD = '2026-11-15.14';
+const BUILD = '2026-11-15.15';
 // Встановлювана програма (GitHub Pages): той самий інтерфейс, вхід через Google, дані — через Apps Script API
 const PWA = !IS_GAS && !!window.BUDGET_PWA;
 const CLOUD = window.BUDGET_CLOUD || {};
@@ -1173,6 +1188,8 @@ const IC = {
 const svg = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || IC.tag}</svg>`;
 document.querySelectorAll('i[data-i]').forEach(el => { el.outerHTML = svg(el.dataset.i, el.dataset.cls || ''); });
 $('#toastIc').innerHTML = svg('check');
+// Хрестик «Закрити» вгорі кожної панелі: на телефоні панель на весь екран, і він завжди під рукою — без прокрутки донизу
+document.querySelectorAll('.sheet').forEach(s => s.insertAdjacentHTML('afterbegin', `<button class="sh-x" data-close aria-label="Закрити" title="Закрити">${svg('x')}</button>`));
 const ICONS = [[/житл|гурт|оренд|кварт/i,'home'],[/харч|їж|продук|кафе/i,'food'],[/транс|проїзд|таксі/i,'bus'],[/навч|книг|курс/i,'book'],[/зв.?яз|телеф|інтернет|мобіл/i,'phone'],[/розваг|кіно/i,'ticket'],[/здоров|аптек|лік/i,'pill'],[/одяг/i,'shirt']];
 
 // function (а не const), бо демо-дані рахуються ще до цього рядка
