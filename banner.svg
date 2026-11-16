@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" width="1280" height="420" font-family="Segoe UI, -apple-system, system-ui, Helvetica, Arial, sans-serif">
+  <!-- Банер для README: ті самі кольори, що в програмі (без чистих чорного й білого) -->
+  <rect width="1280" height="420" rx="28" fill="#121110"/>
+  <rect x="0.5" y="0.5" width="1279" height="419" rx="27.5" fill="none" stroke="#2A2722"/>
+
+  <!-- іконка -->
+  <g transform="translate(80 92)">
+    <rect width="88" height="88" rx="20" fill="#F0703F"/>
+    <g transform="translate(19.4 19.4) scale(2.05)" fill="none" stroke="#1A0F0A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/>
+      <rect x="4" y="8" width="16" height="11" rx="2.5"/>
+      <circle cx="16" cy="13.5" r="1.3" fill="#1A0F0A" stroke="none"/>
+    </g>
+  </g>
+
+  <!-- назва й опис -->
+  <text x="80" y="252" fill="#F3EDE3" font-size="64" font-weight="700" letter-spacing="-1.5">Мій бюджет</text>
+  <text x="82" y="300" fill="#CFC6B9" font-size="26">Витрати, бюджет і статистика — у вашій Google-таблиці</text>
+  <text x="82" y="340" fill="#A39989" font-size="20">My budget · iPhone, Android, ПК · безкоштовно · українська / English</text>
+
+  <!-- спрощена картка «Залишилось», як на огляді програми -->
+  <g transform="translate(840 64)">
+    <rect width="360" height="292" rx="20" fill="#1E1C19" stroke="#36322B"/>
+    <text x="28" y="48" fill="#A39989" font-size="15" letter-spacing="1.5">ЗАЛИШИЛОСЬ</text>
+    <rect x="236" y="30" width="96" height="26" rx="13" fill="#1F3A2C"/>
+    <text x="284" y="48" fill="#7FCB9E" font-size="14" font-weight="600" text-anchor="middle">В нормі</text>
+    <text x="28" y="106" fill="#F3EDE3" font-size="46" font-weight="700" letter-spacing="-1">€119,21</text>
+    <rect x="28" y="128" width="304" height="8" rx="4" fill="#2A2722"/>
+    <rect x="28" y="128" width="182" height="8" rx="4" fill="#6FBF8E"/>
+    <rect x="218" y="122" width="2" height="20" rx="1" fill="#CFC6B9"/>
+
+    <!-- категорії -->
+    <g font-size="14" fill="#CFC6B9">
+      <text x="28" y="180">Харчування</text>
+      <rect x="140" y="171" width="192" height="8" rx="4" fill="#2A2722"/>
+      <rect x="140" y="171" width="118" height="8" rx="4" fill="#E9A35B"/>
+      <text x="28" y="214">Транспорт</text>
+      <rect x="140" y="205" width="192" height="8" rx="4" fill="#2A2722"/>
+      <rect x="140" y="205" width="157" height="8" rx="4" fill="#7D97E0"/>
+      <text x="28" y="248">Житло</text>
+      <rect x="140" y="239" width="192" height="8" rx="4" fill="#2A2722"/>
+      <rect x="140" y="239" width="192" height="8" rx="4" fill="#C48ED8"/>
+    </g>
+  </g>
+</svg>
