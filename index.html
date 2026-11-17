@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#141311">
 <meta name="color-scheme" content="dark">
 <title>Мій бюджет</title>
@@ -70,6 +70,8 @@ html,body{overscroll-behavior:none}
 html,body{overflow-x:clip}
 button,input{font:inherit;color:inherit}
 button{background:none;border:0;cursor:pointer}
+/* без затримки на «подвійний дотик», але масштабування двома пальцями лишається */
+button,a,input,select,label,[data-tip]{touch-action:manipulation}
 button:disabled{cursor:not-allowed;opacity:.45}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-inner)}
 .num{font-variant-numeric:tabular-nums}
@@ -78,6 +80,8 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .hint{font-size:var(--fs-xs);color:var(--mute)}
 
 .app{width:100%;max-width:70rem;margin:0 auto;padding:calc(env(safe-area-inset-top) + var(--s5)) var(--s4) calc(env(safe-area-inset-bottom) + 6rem)}
+/* телефон боком: виріз екрана не закриває краї */
+.app{padding-left:max(var(--s4),env(safe-area-inset-left));padding-right:max(var(--s4),env(safe-area-inset-right))}
 .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--s3) var(--s4);margin-bottom:var(--s5)}
 .top h1{font-size:var(--fs-xl);font-weight:700;letter-spacing:-.02em;line-height:1.15}
 .top .rates{font-size:var(--fs-xs);color:var(--mute);margin-top:var(--s1)}
@@ -204,7 +208,7 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .r-add .box{margin:0}
 .r-add .btn{grid-column:1 / -1;margin-top:0 !important}
 @media(max-width:520px){.r-add{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
-.hbar .nm small{display:block;font-size:.6875rem;font-weight:600;color:var(--mute);line-height:1.2}
+.hbar .nm small{display:block;font-size:var(--fs-xs);font-weight:600;color:var(--mute);line-height:1.2}
 .hbar .nm small.up{color:var(--bad)} .hbar .nm small.down{color:var(--ok)}
 .dow span{font-size:var(--fs-xs);font-weight:600;color:var(--mute);text-align:center;padding-bottom:var(--s1)}
 .day{position:relative;aspect-ratio:1/1.05;border-radius:var(--r-inner);padding:var(--s1) .375rem;display:flex;flex-direction:column;justify-content:space-between;font-size:var(--fs-xs);background:var(--sunk);min-width:0;overflow:hidden}
@@ -408,7 +412,7 @@ body.nosheet #root{display:grid;place-items:center;min-height:calc(var(--vh) - 7
 .mrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px var(--s3);width:100%;text-align:left;padding:var(--s3) var(--s2);border-radius:var(--r-md)}
 .mrow+.mrow{border-top:1px solid var(--line)}
 .mrow .nm{font-weight:600;font-size:var(--fs-sm)}
-.mrow .nm small{font-weight:500;color:var(--accent);margin-left:.375rem;font-size:.6875rem}
+.mrow .nm small{font-weight:500;color:var(--accent);margin-left:.375rem;font-size:var(--fs-xs)}
 .mrow .v{font-family:var(--serif);font-weight:600;text-align:right;white-space:nowrap}
 .mrow .s{font-size:var(--fs-xs);color:var(--mute)}
 .mrow .d{font-size:var(--fs-xs);font-weight:600;text-align:right;white-space:nowrap}
@@ -597,7 +601,7 @@ body.t-arch #archive{display:flex}
 }
 .more-hist{width:100%;margin-top:var(--s3)}
 /* сповіщення про нову версію */
-.upd{position:fixed;left:50%;top:.75rem;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:var(--s3);width:min(35rem,calc(100vw - 1.5rem));padding:var(--s3) var(--s3) var(--s3) var(--s4);border-radius:var(--r-md);background:var(--raise);box-shadow:0 8px 24px rgba(10,8,6,.45),inset 0 0 0 1px var(--accent);font-size:var(--fs-xs);color:var(--ink2)}
+.upd{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + .75rem);transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:var(--s3);width:min(35rem,calc(100vw - 1.5rem));padding:var(--s3) var(--s3) var(--s3) var(--s4);border-radius:var(--r-md);background:var(--raise);box-shadow:0 8px 24px rgba(10,8,6,.45),inset 0 0 0 1px var(--accent);font-size:var(--fs-xs);color:var(--ink2)}
 .upd > .i{color:var(--accent);font-size:1.25rem;flex:none}
 .upd span{flex:1;min-width:0}
 .upd b{display:block;color:var(--ink);font-size:var(--fs-sm)}
@@ -785,6 +789,7 @@ a.btn{text-decoration:none}
   .sheet{top:0;bottom:0;max-width:none;max-height:none;height:var(--vh);border-radius:0;
     padding:calc(env(safe-area-inset-top) + var(--s4)) var(--s4) calc(env(safe-area-inset-bottom) + var(--s5));
     overscroll-behavior:contain;box-shadow:none}
+  .sheet{padding-left:max(var(--s4),env(safe-area-inset-left));padding-right:max(var(--s4),env(safe-area-inset-right))}
   .sheet .grab{display:none}
   .sh-x{position:sticky;top:0;z-index:3;display:grid;place-items:center;float:right;width:var(--tap);height:var(--tap);margin:-.25rem -.25rem 0 var(--s2);
     border-radius:50%;background:var(--raise);color:var(--ink);font-size:1.25rem;box-shadow:0 0 0 4px var(--card)}
@@ -889,6 +894,16 @@ body.t-over .hist-seg{display:none}
   .filter button{width:var(--tap);height:var(--tap)}
   .toast button{min-height:var(--tap)}
 }
+/* натискання пальцем: рядок чи кнопка одразу підсвічується (на телефоні «наведення» немає) */
+.cat:active,.tx:not(.old):active,.acc:active,.arc-m > button:active,.arc-li:active,.mrow:active,.sh-row button.nm:active,.nav:active,.ib:active{background:var(--sunk)}
+.tabbar .tab:active{background:rgba(243,237,227,.06);color:var(--ink)}
+.chip:not(.on):active{background:var(--raise)}
+.seg button:not(.on):active,.btn-link:active{color:var(--ink)}
+/* перевищений день — не лише червоний колір, а й рамка (для тих, хто погано розрізняє червоний і зелений) */
+.day.over:not(.today){box-shadow:inset 0 0 0 1.5px var(--bad)}
+.cal-key i.k-bad{box-shadow:inset 0 0 0 1.5px var(--bad)}
+/* панель отримує фокус, щоб програма читання з екрана почала з неї; рамка навколо всієї панелі не потрібна */
+.sheet:focus{outline:none}
 
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:1ms !important;animation-iteration-count:1 !important;transition-duration:1ms !important}
@@ -1051,7 +1066,7 @@ body.t-over .hist-seg{display:none}
 /* ---------- дані: Apps Script або демо ---------- */
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 // Версія інтерфейсу — має збігатися з BUDGET_APP.BUILD у BudgetApp.gs
-const BUILD = '2026-11-17.4';
+const BUILD = '2026-11-17.5';
 // Встановлювана програма (GitHub Pages): той самий інтерфейс, вхід через Google, дані — через Apps Script API
 const PWA = !IS_GAS && !!window.BUDGET_PWA;
 const CLOUD = window.BUDGET_CLOUD || {};
@@ -1078,6 +1093,7 @@ const EN = {
   'Валюта витрати': 'Expense currency', 'Категорія': 'Category', 'Звідки гроші': 'Where the money came from', 'Дата': 'Date',
   'Де / що': 'Where / what', '(необовʼязк.)': '(optional)', 'напр. Lidl': 'e.g. Lidl', 'Скасувати': 'Cancel', 'Видалити витрату': 'Delete expense',
   'Закрити': 'Close', 'Зберегти в таблицю': 'Save to the sheet', 'Мої таблиці': 'My sheets', 'Категорії': 'Categories', 'Назад до бюджету': 'Back to budget',
+  'Синій': 'Blue', 'Помаранчевий': 'Orange', 'Зелений': 'Green', 'Жовтий': 'Yellow', 'Фіолетовий': 'Purple', 'Сірий': 'Grey', 'Бірюзовий': 'Teal', 'Рожевий': 'Pink',
   // демо-дані
   'Житло (Гуртожиток)': 'Housing (Dorm)', 'Харчування та їжа': 'Food & groceries', 'Транспорт': 'Transport', 'Навчання': 'Studies',
   "Зв'язок": 'Phone & internet', 'Інше': 'Other', 'Гуртожиток': 'Dorm', 'Вода': 'Water', 'Кава й булочка': 'Coffee & pastry', 'Друк': 'Printing',
@@ -1530,6 +1546,8 @@ const SYM = {EUR:'€', UAH:'₴', USD:'$'};
 // MONTHS, MONTHS_G, DOW, DOW_S — у розділі «мова» (залежать від вибраної мови)
 // Кольори категорій: закріплені за категорією (за порядком у дашборді), не за рангом
 const COLORS = ['#7D97E0','#E8906A','#6CC59A','#D9B05A','#B08AD6','#A79F94','#64BDBD','#DC86A6'];
+// назви кольорів — для програми читання з екрана (замість «#7D97E0»)
+const COLOR_NAMES = ['Синій', 'Помаранчевий', 'Зелений', 'Жовтий', 'Фіолетовий', 'Сірий', 'Бірюзовий', 'Рожевий'];
 
 const IC = {
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-6h4v6"/>',
@@ -2193,7 +2211,11 @@ function updateEqv() {
   const eur = toEur(v, ADD_CUR, D.rates);
   $('#eqv').textContent = '≈ ' + ['EUR', 'UAH', 'USD'].filter(c => c !== ADD_CUR).map(c => fmt(eur, c)).join(' · ');
 }
-function setAmtError(on) { $('#amtBox').classList.toggle('err', on); $('#amtErr').classList.toggle('on', on); }
+function setAmtError(on) {
+  $('#amtBox').classList.toggle('err', on); $('#amtErr').classList.toggle('on', on);
+  // помилка привʼязана до поля — програма читання з екрана озвучує її разом із полем
+  const i = $('#amt'); i.setAttribute('aria-invalid', on); if (on) i.setAttribute('aria-describedby', 'amtErr'); else i.removeAttribute('aria-describedby');
+}
 function syncCurSeg() { document.querySelectorAll('#curSeg button').forEach(b => b.classList.toggle('on', b.dataset.c === ADD_CUR)); }
 /* Форма: витрата або дохід */
 let ADD_KIND = 'exp';
@@ -2787,7 +2809,7 @@ function openAcc(id) {
     <div class="f"><label for="aIban">IBAN <span class="opt">${T('(необовʼязк.)')}</span></label>
       <div class="copy-row"><div class="box"><input id="aIban" maxlength="42" value="${esc(a ? a.iban : '')}" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
       ${a && a.iban ? `<button class="btn btn-secondary" data-copy="${esc(a.iban)}" aria-label="${T('Скопіювати')}">${svg('copy')} ${T('Скопіювати')}</button>` : ''}</div></div>
-    <div class="f"><span class="flabel">${T('Колір')}</span><div class="swatches">${COLORS.map(c => `<button data-acol="${c}" style="--c:${c}" class="${ACC_ED.color === c ? 'on' : ''}" aria-label="${c}"></button>`).join('')}</div></div>
+    <div class="f"><span class="flabel">${T('Колір')}</span><div class="swatches" role="group" aria-label="${T('Колір')}">${COLORS.map((c, i) => `<button data-acol="${c}" style="--c:${c}" class="${ACC_ED.color === c ? 'on' : ''}" aria-pressed="${ACC_ED.color === c}" aria-label="${T(COLOR_NAMES[i])}"></button>`).join('')}</div></div>
     <button type="button" class="wk-toggle w-tog" id="aBud" aria-pressed="${ACC_ED.inBudget}">${svg('wallet')}<span><b>${T('Рахувати в бюджеті')}</b>${T('витрати з цього рахунку зменшують «Залишилось» і денний ліміт')}</span><span class="sw" aria-hidden="true"></span></button>
     <div class="errmsg" id="aErr" role="alert"></div>
     <button class="btn btn-primary" id="aSave">${a ? T('Зберегти') : T('Додати рахунок')}</button>
@@ -2856,15 +2878,35 @@ async function saveXfer(t) {
 }
 
 /* ---------- панелі, сповіщення, підказки ---------- */
+let OPENER = null; // кнопка, якою відкрили панель — після закриття фокус повертається на неї
 function openSheet(id) {
-  document.querySelectorAll('.sheet').forEach(s => s.classList.toggle('on', '#' + s.id === id));
+  const s = $(id);
+  if (!document.querySelector('.sheet.on')) OPENER = document.activeElement;
+  document.querySelectorAll('.sheet').forEach(x => x.classList.toggle('on', x === s));
+  // панель без сталої назви — називаємо за її заголовком (щоб програма читання з екрана сказала, що відкрилось)
+  if (s && !s.hasAttribute('aria-labelledby')) { const h = s.querySelector('h3'); if (h && h.textContent.trim()) s.setAttribute('aria-label', h.textContent.trim()); else s.removeAttribute('aria-label'); }
   $('#scrim').classList.toggle('light', id === '#txSheet' && DESK.matches);
   $('#scrim').classList.add('on'); hideTip();
+  // фокус — усередину панелі, якщо його туди не поставила сама форма
+  setTimeout(() => { if (s && s.classList.contains('on') && !s.contains(document.activeElement)) { s.setAttribute('tabindex', '-1'); s.focus({preventScroll: true}); } }, 300);
 }
 function closeSheets() {
+  const was = !!document.querySelector('.sheet.on');
   $('#scrim').classList.remove('on'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('on'));
   SEL_ROW = null; document.querySelectorAll('tr.sel').forEach(r => r.classList.remove('sel'));
+  if (was && OPENER && OPENER.isConnected && OPENER.focus) OPENER.focus({preventScroll: true});
+  OPENER = null;
 }
+// Вибране в перемикачах і відкрита вкладка — не лише кольором: програма читання з екрана теж це озвучує
+let pressT = 0;
+function syncPressed() {
+  pressT = 0;
+  document.querySelectorAll('.seg button').forEach(b => { const v = String(b.classList.contains('on')); if (b.getAttribute('aria-pressed') !== v) b.setAttribute('aria-pressed', v); });
+  document.querySelectorAll('.tabbar .tab,.side .nav[data-tab]').forEach(b => { if (b.classList.contains('on')) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+}
+new MutationObserver(() => { if (!pressT) pressT = requestAnimationFrame(syncPressed); })
+  .observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['class']});
+syncPressed();
 let toastTimer;
 function toast(text, btn, fn, kind) {
   const el = $('#toast');
@@ -2918,7 +2960,7 @@ function setTab(tab) {
   if (tab === 'arch') document.querySelectorAll('.tabbar [data-tab="hist"],.side [data-tab="hist"]').forEach(b => b.classList.add('on'));
   if (tab === 'wallet') renderWallet();
   if (D && $('#txList')) renderHistory(); // на огляді — коротка історія, у вкладці — повна
-  window.scrollTo({top: 0, behavior: 'smooth'});
+  window.scrollTo({top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
   if (tab === 'stats') loadStats();
   if (tab === 'arch') loadArchive();
 }
@@ -3429,7 +3471,7 @@ document.addEventListener('click', async e => {
   else if (ds.acc) openAcc(ds.acc);
   else if (ds.atype) { ACC_ED.type = ds.atype; t.parentElement.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b === t); b.setAttribute('aria-checked', b === t); }); }
   else if (ds.acur) { ACC_ED.currency = ds.acur; t.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === t)); $('#aSym').textContent = SYM[ds.acur]; }
-  else if (ds.acol) { ACC_ED.color = ds.acol; t.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === t)); }
+  else if (ds.acol) { ACC_ED.color = ds.acol; t.parentElement.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b === t); b.setAttribute('aria-pressed', b === t); }); }
   else if (t.id === 'aBud') { ACC_ED.inBudget = t.getAttribute('aria-pressed') !== 'true'; t.setAttribute('aria-pressed', ACC_ED.inBudget); }
   else if (t.id === 'aSave') saveAcc(t);
   else if (t.id === 'aDel') {
